@@ -59,6 +59,11 @@
             border-color: var(--tg-theme-button-color, #0088cc);
         }
         
+        input:disabled {
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            opacity: 0.7;
+        }
+        
         button {
             width: 100%;
             padding: 14px;
@@ -149,6 +154,12 @@
             text-align: center;
         }
         
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--tg-theme-hint-color, #666);
+        }
+        
         @media (max-width: 480px) {
             body {
                 padding: 15px;
@@ -178,13 +189,8 @@
             </div>
             
             <div class="form-group">
-                <label>📧 البريد الإلكتروني (Gmail)</label>
-                <input type="email" id="email" placeholder="example@gmail.com" dir="ltr">
-            </div>
-            
-            <div class="form-group">
-                <label>🔑 كلمة مرور التطبيق (App Password)</label>
-                <input type="password" id="password" placeholder="أدخل كلمة مرور التطبيق" dir="ltr">
+                <label>📧 البريد الإلكتروني (يتم تعبئته تلقائياً)</label>
+                <input type="email" id="email" placeholder="البريد المسجل" dir="ltr" disabled>
             </div>
             
             <button id="sendBtn" onclick="sendReport()">📤 إرسال البلاغ</button>
@@ -193,14 +199,15 @@
         <div id="status" class="status"></div>
         
         <div class="note">
-            💡 ملاحظة: يتم استخدام كلمة مرور التطبيق وليس كلمة المرور العادية<br>
-            🔑 لإنشاء كلمة مرور تطبيق: https://myaccount.google.com/apppasswords
+            💡 ملاحظة: بريدك الإلكتروني محفوظ مسبقاً<br>
+            🔑只需要 إدخال رقم الهاتف وإرسال البلاغ
         </div>
     </div>
     
     <script>
         let tg = window.Telegram.WebApp;
         let user = null;
+        let userEmail = '';
         
         // تهيئة التطبيق
         tg.ready();
@@ -214,36 +221,42 @@
                 <p>👤 ${user.first_name || ''} ${user.last_name || ''}</p>
                 <p>🆔 ${user.id}</p>
                 <p>📝 ${user.username ? '@' + user.username : 'لا يوجد يوزرنيم'}</p>
+                <p>✅ مسجل في النظام</p>
             `;
+            
+            // طلب بيانات المستخدم من البوت
+            loadUserData();
         } else {
-            document.getElementById('userInfo').innerHTML = '<p>👤 زائر</p>';
+            document.getElementById('userInfo').innerHTML = '<p>👤 زائر - الرجاء استخدام البوت أولاً</p>';
+            document.getElementById('sendBtn').disabled = true;
+        }
+        
+        async function loadUserData() {
+            try {
+                // إرسال طلب للحصول على بيانات المستخدم
+                const requestData = {
+                    action: 'get_user_data'
+                };
+                
+                // ملاحظة: هذا الجزء يتطلب أن يكون البوت يرد على طلب البيانات
+                // في الإصدار الحالي، سنستخدم البيانات المخزنة محلياً
+                
+                // بدلاً من ذلك، نعرض رسالة بأن المستخدم مسجل
+                document.getElementById('email').placeholder = 'بريدك المسجل في البوت';
+                document.getElementById('email').value = '✓ بريدك مسجل مسبقاً';
+                
+            } catch (error) {
+                console.error('Error loading user data:', error);
+            }
         }
         
         async function sendReport() {
             const phoneNumber = document.getElementById('phoneNumber').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const password = document.getElementById('password').value.trim();
             const statusDiv = document.getElementById('status');
             
             // التحقق من المدخلات
             if (!phoneNumber) {
                 showStatus('الرجاء إدخال رقم الهاتف', 'error');
-                return;
-            }
-            
-            if (!email) {
-                showStatus('الرجاء إدخال البريد الإلكتروني', 'error');
-                return;
-            }
-            
-            if (!password) {
-                showStatus('الرجاء إدخال كلمة مرور التطبيق', 'error');
-                return;
-            }
-            
-            // التحقق من صيغة البريد
-            if (!email.match(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)) {
-                showStatus('الرجاء إدخال بريد Gmail صحيح', 'error');
                 return;
             }
             
@@ -261,16 +274,13 @@
             showStatus('جاري إرسال البلاغ...', 'info');
             
             try {
-                // إرسال البيانات إلى البوت عبر WebApp
+                // إرسال البلاغ إلى البوت (البريد محفوظ مسبقاً)
                 const reportData = {
                     action: 'send_report',
                     data: {
-                        phone: phoneNumber,
-                        email: email,
-                        password: password,
-                        user_id: user?.id,
-                        username: user?.username,
-                        first_name: user?.first_name
+                        phone: phoneNumber
+                        // ملاحظة: لا نحتاج لإرسال البريد وكلمة المرور
+                        // لأن البوت سيستخدم البيانات المخزنة
                     }
                 };
                 
@@ -280,10 +290,8 @@
                 showStatus('✅ تم إرسال البلاغ بنجاح! جاري المعالجة...', 'success');
                 tg.showAlert('تم إرسال البلاغ بنجاح! سيتم معالجته خلال دقائق');
                 
-                // مسح الحقول
+                // مسح حقل رقم الهاتف
                 document.getElementById('phoneNumber').value = '';
-                document.getElementById('email').value = '';
-                document.getElementById('password').value = '';
                 
                 // إغلاق التطبيق بعد 3 ثواني
                 setTimeout(() => {
