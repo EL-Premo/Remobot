@@ -150,8 +150,13 @@
         }
         
         @media (max-width: 480px) {
-            body { padding: 15px; }
-            .card { padding: 15px; }
+            body {
+                padding: 15px;
+            }
+            
+            .card {
+                padding: 15px;
+            }
         }
     </style>
 </head>
@@ -179,7 +184,7 @@
         
         <div class="note">
             💡 ملاحظة: بريدك الإلكتروني مسجل مسبقاً في البوت<br>
-            🔑 تحتاج فقط إلى إدخال رقم الهاتف
+            🔑只需要 إدخال رقم الهاتف
         </div>
     </div>
     
@@ -193,9 +198,12 @@
         
         // محاولة الحصول على بيانات المستخدم بطرق مختلفة
         function getUserData() {
+            // الطريقة 1: من initDataUnsafe
             if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                 return tg.initDataUnsafe.user;
             }
+            
+            // الطريقة 2: من WebApp initData
             if (tg.initData) {
                 try {
                     const params = new URLSearchParams(tg.initData);
@@ -207,6 +215,7 @@
                     console.error('Error parsing initData:', e);
                 }
             }
+            
             return null;
         }
         
@@ -220,6 +229,8 @@
                 <p>📝 ${user.username ? '@' + user.username : 'لا يوجد يوزرنيم'}</p>
                 <p>✅ متصل بالبوت</p>
             `;
+            
+            // تفعيل الزر
             document.getElementById('sendBtn').disabled = false;
         } else {
             document.getElementById('userInfo').innerHTML = `
@@ -237,8 +248,10 @@
                 sendReport();
             });
             
+            // تعطيل الزر في البداية
             tg.MainButton.disable();
             
+            // تمكين الزر عند كتابة رقم صحيح
             const phoneInput = document.getElementById('phoneNumber');
             phoneInput.addEventListener('input', function() {
                 const phone = this.value.trim();
@@ -254,18 +267,33 @@
             const phoneNumber = document.getElementById('phoneNumber').value.trim();
             const statusDiv = document.getElementById('status');
             
+            // التحقق من المدخلات
             if (!phoneNumber) {
                 showStatus('الرجاء إدخال رقم الهاتف', 'error');
-                if (tg.showPopup) tg.showPopup({title: 'خطأ', message: 'الرجاء إدخال رقم الهاتف', buttons: [{type: 'ok'}]});
+                if (tg.showPopup) {
+                    tg.showPopup({
+                        title: 'خطأ',
+                        message: 'الرجاء إدخال رقم الهاتف',
+                        buttons: [{type: 'ok'}]
+                    });
+                }
                 return;
             }
             
+            // التحقق من صيغة الرقم
             if (!phoneNumber.match(/^\d{8,15}$/)) {
                 showStatus('الرقم يجب أن يحتوي على 8-15 رقم فقط', 'error');
-                if (tg.showPopup) tg.showPopup({title: 'خطأ', message: 'الرقم يجب أن يحتوي على 8-15 رقم فقط', buttons: [{type: 'ok'}]});
+                if (tg.showPopup) {
+                    tg.showPopup({
+                        title: 'خطأ',
+                        message: 'الرقم يجب أن يحتوي على 8-15 رقم فقط',
+                        buttons: [{type: 'ok'}]
+                    });
+                }
                 return;
             }
             
+            // تعطيل الزر
             const btn = document.getElementById('sendBtn');
             if (btn) btn.disabled = true;
             if (tg.MainButton) {
@@ -276,44 +304,40 @@
             showStatus('جاري إرسال البلاغ...', 'info');
             
             try {
+                // إعداد البيانات للإرسال
                 const reportData = {
-                    phone: phoneNumber,
-                    user_id: user?.id || 'unknown',
-                    username: user?.username || '',
-                    first_name: user?.first_name || ''
+                    action: 'send_report',
+                    data: {
+                        phone: phoneNumber,
+                        user_id: user?.id || 'unknown',
+                        username: user?.username || '',
+                        first_name: user?.first_name || ''
+                    }
                 };
                 
-                // ⚠️ ضع هنا رابط ملف الـ PHP الخاص بك الموجود على استضافتك
-                const apiURL = 'https://your-domain.com/api/receive_report.php'; 
+                console.log('Sending report:', reportData);
                 
-                const response = await fetch(apiURL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        initData: tg.initData,
-                        data: reportData
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error('فشل الاتصال بالخادم');
-                }
+                // إرسال البيانات عبر WebApp
+                tg.sendData(JSON.stringify(reportData));
                 
                 showStatus('✅ تم إرسال البلاغ بنجاح! جاري المعالجة...', 'success');
                 
+                // مسح حقل رقم الهاتف
                 document.getElementById('phoneNumber').value = '';
                 if (tg.MainButton) tg.MainButton.disable();
                 
+                // إظهار رسالة نجاح
                 if (tg.showPopup) {
                     tg.showPopup({
                         title: 'تم الإرسال',
                         message: 'تم إرسال البلاغ بنجاح! سيتم معالجته خلال دقائق',
                         buttons: [{type: 'ok'}]
                     });
+                } else if (tg.showAlert) {
+                    tg.showAlert('تم إرسال البلاغ بنجاح!');
                 }
                 
+                // إغلاق التطبيق بعد 2 ثانية
                 setTimeout(() => {
                     tg.close();
                 }, 2000);
@@ -321,7 +345,13 @@
             } catch (error) {
                 console.error('Error:', error);
                 showStatus('❌ حدث خطأ: ' + error.message, 'error');
-                if (tg.showPopup) tg.showPopup({title: 'خطأ', message: 'حدث خطأ: ' + error.message, buttons: [{type: 'ok'}]});
+                if (tg.showPopup) {
+                    tg.showPopup({
+                        title: 'خطأ',
+                        message: 'حدث خطأ: ' + error.message,
+                        buttons: [{type: 'ok'}]
+                    });
+                }
             } finally {
                 if (btn) btn.disabled = false;
                 if (tg.MainButton) {
@@ -335,16 +365,26 @@
             const statusDiv = document.getElementById('status');
             statusDiv.textContent = message;
             statusDiv.className = `status ${type}`;
+            
             if (type !== 'error') {
-                setTimeout(() => { statusDiv.style.display = 'none'; }, 5000);
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
             }
         }
         
+        // تحسين التطبيق للهواتف
         tg.setBackgroundColor('var(--tg-theme-bg-color)');
         tg.setHeaderColor('var(--tg-theme-header-bg-color)');
         
-        const observer = new ResizeObserver(() => { tg.expand(); });
+        // تحديث ارتفاع التطبيق عند تغيير المحتوى
+        const observer = new ResizeObserver(() => {
+            tg.expand();
+        });
         observer.observe(document.body);
+        
+        // تسجيل أن التطبيق جاهز
+        console.log('Mini App ready, user:', user);
     </script>
 </body>
 </html>
