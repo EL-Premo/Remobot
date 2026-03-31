@@ -64,12 +64,17 @@
             padding: 12px;
             border-radius: 8px;
             display: none;
-            animation: fadeIn 0.5s;
+            animation: fadeIn 0.3s;
         }
         
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-10px); }
+            from { opacity: 0; transform: translateY(-5px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(-5px); }
         }
         
         .status.success {
@@ -136,8 +141,38 @@
         .counter {
             text-align: center;
             margin-top: 15px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--tg-theme-button-color, #0088cc);
+            background: var(--tg-theme-secondary-bg-color, #f0f0f0);
+            padding: 8px;
+            border-radius: 20px;
+            display: inline-block;
+            width: auto;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .counter-container {
+            text-align: center;
+            margin-top: 15px;
+        }
+        
+        .clear-btn {
+            background: var(--tg-theme-secondary-bg-color, #e0e0e0);
+            color: var(--tg-theme-text-color, #666);
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
             font-size: 12px;
-            color: var(--tg-theme-hint-color, #888);
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+        
+        .clear-btn:active {
+            opacity: 0.7;
+            transform: scale(0.98);
         }
         
         @media (max-width: 480px) {
@@ -171,11 +206,14 @@
         
         <div id="status" class="status"></div>
         
-        <div class="counter" id="counter"></div>
+        <div class="counter-container">
+            <div class="counter" id="counter">📊 لم يتم إرسال أي بلاغ بعد</div>
+            <button class="clear-btn" id="clearBtn" style="display: none;">🔄 إعادة ضبط العداد</button>
+        </div>
         
         <div class="note">
             💡只需要 إدخال رقم الهاتف ثم الضغط على الزر الأزرق في الأسفل<br>
-            📨 يمكنك إرسال عدة بلاغات دون إغلاق التطبيق
+            📨 يمكنك إرسال عدة بلاغات متتالية - التطبيق يبقى مفتوحاً
         </div>
     </div>
     
@@ -183,8 +221,9 @@
         let tg = window.Telegram.WebApp;
         let user = null;
         let sendCount = 0;
+        let lastPhone = '';
         
-        // تهيئة التطبيق
+        // تهيئة التطبيق - لا نغلق أبداً
         tg.ready();
         tg.expand();
         
@@ -196,7 +235,7 @@
                 <p>👤 ${user.first_name || ''} ${user.last_name || ''}</p>
                 <p>🆔 ${user.id}</p>
                 <p>📝 ${user.username ? '@' + user.username : 'لا يوجد يوزرنيم'}</p>
-                <p>✅ مرحباً بك!</p>
+                <p>✅ مرحباً بك! يمكنك الإرسال المتكرر</p>
             `;
         } else {
             document.getElementById('userInfo').innerHTML = '<p>⚠️ يرجى فتح Mini App من داخل البوت</p>';
@@ -209,6 +248,7 @@
         
         // التحقق من صحة رقم الهاتف
         const phoneInput = document.getElementById('phoneNumber');
+        const clearBtn = document.getElementById('clearBtn');
         
         phoneInput.addEventListener('input', function() {
             const phone = this.value.trim();
@@ -227,22 +267,46 @@
         // تحديث العداد
         function updateCounter() {
             const counterDiv = document.getElementById('counter');
-            if (sendCount > 0) {
-                counterDiv.innerHTML = `📊 تم إرسال ${sendCount} بلاغ${sendCount > 1 ? 'ات' : ''}`;
+            if (sendCount === 0) {
+                counterDiv.innerHTML = '📊 لم يتم إرسال أي بلاغ بعد';
+                clearBtn.style.display = 'none';
             } else {
-                counterDiv.innerHTML = '';
+                counterDiv.innerHTML = `✅ تم إرسال ${sendCount} بلاغ${sendCount > 1 ? 'ات' : ''} بنجاح`;
+                clearBtn.style.display = 'inline-block';
             }
+        }
+        
+        // إعادة ضبط العداد
+        clearBtn.onclick = function() {
+            sendCount = 0;
+            updateCounter();
+            tg.showPopup({
+                title: 'تم',
+                message: 'تم إعادة ضبط العداد',
+                buttons: [{type: 'ok'}]
+            });
+        };
+        
+        function hideStatusAfterDelay() {
+            const statusDiv = document.getElementById('status');
+            setTimeout(() => {
+                if (statusDiv.style.display === 'block') {
+                    statusDiv.style.animation = 'fadeOut 0.3s';
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                        statusDiv.style.animation = '';
+                    }, 300);
+                }
+            }, 4000);
         }
         
         function showStatus(message, type) {
             const statusDiv = document.getElementById('status');
             statusDiv.textContent = message;
             statusDiv.className = `status ${type}`;
+            statusDiv.style.display = 'block';
             
-            // إخفاء الرسالة بعد 5 ثواني
-            setTimeout(() => {
-                statusDiv.style.display = 'none';
-            }, 5000);
+            hideStatusAfterDelay();
         }
         
         function sendReport() {
@@ -266,9 +330,13 @@
                 return;
             }
             
+            // حفظ آخر رقم تم إرساله
+            lastPhone = phoneNumber;
+            
             // إظهار مؤشر التحميل
             tg.MainButton.showProgress(true);
             tg.MainButton.setText("جاري الإرسال...");
+            tg.MainButton.disable();
             
             try {
                 // إعداد البيانات للإرسال
@@ -293,12 +361,11 @@
                 
                 // مسح حقل رقم الهاتف
                 document.getElementById('phoneNumber').value = '';
-                tg.MainButton.disable();
                 
                 // إظهار رسالة نجاح
                 showStatus(`✅ تم إرسال البلاغ رقم ${sendCount} بنجاح!`, 'success');
                 
-                // إظهار رسالة منبثقة
+                // إظهار رسالة منبثقة (اختيارية)
                 tg.showPopup({
                     title: 'تم الإرسال',
                     message: `✅ تم إرسال البلاغ رقم ${sendCount} بنجاح!\nيمكنك إرسال بلاغ آخر`,
@@ -306,7 +373,9 @@
                 });
                 
                 // التركيز على حقل الإدخال للإرسال السريع
-                document.getElementById('phoneNumber').focus();
+                setTimeout(() => {
+                    document.getElementById('phoneNumber').focus();
+                }, 100);
                 
             } catch (error) {
                 console.error('Error:', error);
@@ -319,6 +388,10 @@
             } finally {
                 tg.MainButton.hideProgress(true);
                 tg.MainButton.setText("📤 إرسال البلاغ");
+                // نعيد تمكين الزر فقط إذا كان الحقل فارغاً
+                if (document.getElementById('phoneNumber').value.trim() === '') {
+                    tg.MainButton.disable();
+                }
             }
         }
         
@@ -326,31 +399,51 @@
         tg.setBackgroundColor('var(--tg-theme-bg-color)');
         tg.setHeaderColor('var(--tg-theme-header-bg-color)');
         
-        // تحديث ارتفاع التطبيق
-        const observer = new ResizeObserver(() => {
-            tg.expand();
-        });
+        // تحديث ارتفاع التطبيق عند أي تغيير
+        const updateHeight = () => {
+            setTimeout(() => tg.expand(), 50);
+        };
+        
+        // مراقبة تغييرات الحجم
+        const observer = new ResizeObserver(updateHeight);
         observer.observe(document.body);
+        
+        // مراقبة تغييرات المحتوى
+        const observerContent = new MutationObserver(updateHeight);
+        observerContent.observe(document.body, { childList: true, subtree: true, attributes: true });
         
         // دعم إرسال بالضغط على Enter
         phoneInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                if (tg.MainButton.isActive) {
+                const phone = this.value.trim();
+                if (phone && phone.match(/^\d{8,15}$/)) {
                     sendReport();
+                } else if (phone) {
+                    tg.showPopup({
+                        title: 'خطأ',
+                        message: 'رقم الهاتف غير صحيح (8-15 رقم)',
+                        buttons: [{type: 'ok'}]
+                    });
                 }
             }
         });
         
-        // تحديث ارتفاع التطبيق عند تغيير المحتوى
-        const updateHeight = () => {
-            setTimeout(() => tg.expand(), 100);
-        };
+        // حفظ آخر رقم في localStorage (اختياري)
+        const savedPhone = localStorage.getItem('lastPhone');
+        if (savedPhone && savedPhone.match(/^\d{8,15}$/)) {
+            phoneInput.value = savedPhone;
+            tg.MainButton.enable();
+        }
         
-        // مراقبة التغييرات في الـ status
-        const statusDiv = document.getElementById('status');
-        const observerStatus = new MutationObserver(updateHeight);
-        observerStatus.observe(statusDiv, { attributes: true, childList: true, subtree: true });
+        // حفظ آخر رقم عند تغييره
+        phoneInput.addEventListener('change', function() {
+            if (this.value.trim().match(/^\d{8,15}$/)) {
+                localStorage.setItem('lastPhone', this.value.trim());
+            }
+        });
+        
+        console.log('Mini App ready - will stay open for multiple sends');
     </script>
 </body>
 </html>
