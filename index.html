@@ -64,24 +64,30 @@
             padding: 12px;
             border-radius: 8px;
             display: none;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .status.success {
-            background: rgba(76, 175, 80, 0.1);
+            background: rgba(76, 175, 80, 0.15);
             color: #4caf50;
             border: 1px solid #4caf50;
             display: block;
         }
         
         .status.error {
-            background: rgba(244, 67, 54, 0.1);
+            background: rgba(244, 67, 54, 0.15);
             color: #f44336;
             border: 1px solid #f44336;
             display: block;
         }
         
         .status.info {
-            background: rgba(33, 150, 243, 0.1);
+            background: rgba(33, 150, 243, 0.15);
             color: #2196f3;
             border: 1px solid #2196f3;
             display: block;
@@ -127,6 +133,13 @@
             text-align: center;
         }
         
+        .counter {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 12px;
+            color: var(--tg-theme-hint-color, #888);
+        }
+        
         @media (max-width: 480px) {
             body {
                 padding: 15px;
@@ -152,20 +165,24 @@
         <div class="card">
             <div class="form-group">
                 <label>📞 رقم الهاتف (بدون +)</label>
-                <input type="tel" id="phoneNumber" placeholder="مثال: 966512345678" dir="ltr">
+                <input type="tel" id="phoneNumber" placeholder="مثال: 966512345678" dir="ltr" autocomplete="off">
             </div>
         </div>
         
         <div id="status" class="status"></div>
         
+        <div class="counter" id="counter"></div>
+        
         <div class="note">
-            💡只需要 إدخال رقم الهاتف ثم الضغط على الزر الأزرق في الأسفل
+            💡只需要 إدخال رقم الهاتف ثم الضغط على الزر الأزرق في الأسفل<br>
+            📨 يمكنك إرسال عدة بلاغات دون إغلاق التطبيق
         </div>
     </div>
     
     <script>
         let tg = window.Telegram.WebApp;
         let user = null;
+        let sendCount = 0;
         
         // تهيئة التطبيق
         tg.ready();
@@ -206,6 +223,27 @@
         tg.MainButton.onClick(function() {
             sendReport();
         });
+        
+        // تحديث العداد
+        function updateCounter() {
+            const counterDiv = document.getElementById('counter');
+            if (sendCount > 0) {
+                counterDiv.innerHTML = `📊 تم إرسال ${sendCount} بلاغ${sendCount > 1 ? 'ات' : ''}`;
+            } else {
+                counterDiv.innerHTML = '';
+            }
+        }
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+            
+            // إخفاء الرسالة بعد 5 ثواني
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 5000);
+        }
         
         function sendReport() {
             const phoneNumber = document.getElementById('phoneNumber').value.trim();
@@ -249,24 +287,30 @@
                 // إرسال البيانات عبر WebApp
                 tg.sendData(JSON.stringify(reportData));
                 
+                // زيادة العداد
+                sendCount++;
+                updateCounter();
+                
                 // مسح حقل رقم الهاتف
                 document.getElementById('phoneNumber').value = '';
                 tg.MainButton.disable();
                 
                 // إظهار رسالة نجاح
+                showStatus(`✅ تم إرسال البلاغ رقم ${sendCount} بنجاح!`, 'success');
+                
+                // إظهار رسالة منبثقة
                 tg.showPopup({
                     title: 'تم الإرسال',
-                    message: 'تم إرسال البلاغ بنجاح!',
+                    message: `✅ تم إرسال البلاغ رقم ${sendCount} بنجاح!\nيمكنك إرسال بلاغ آخر`,
                     buttons: [{type: 'ok'}]
                 });
                 
-                // إغلاق التطبيق بعد 2 ثانية
-                setTimeout(() => {
-                    tg.close();
-                }, 2000);
+                // التركيز على حقل الإدخال للإرسال السريع
+                document.getElementById('phoneNumber').focus();
                 
             } catch (error) {
                 console.error('Error:', error);
+                showStatus('❌ حدث خطأ: ' + error.message, 'error');
                 tg.showPopup({
                     title: 'خطأ',
                     message: 'حدث خطأ: ' + error.message,
@@ -287,6 +331,26 @@
             tg.expand();
         });
         observer.observe(document.body);
+        
+        // دعم إرسال بالضغط على Enter
+        phoneInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (tg.MainButton.isActive) {
+                    sendReport();
+                }
+            }
+        });
+        
+        // تحديث ارتفاع التطبيق عند تغيير المحتوى
+        const updateHeight = () => {
+            setTimeout(() => tg.expand(), 100);
+        };
+        
+        // مراقبة التغييرات في الـ status
+        const statusDiv = document.getElementById('status');
+        const observerStatus = new MutationObserver(updateHeight);
+        observerStatus.observe(statusDiv, { attributes: true, childList: true, subtree: true });
     </script>
 </body>
 </html>
