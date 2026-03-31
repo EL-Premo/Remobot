@@ -138,28 +138,6 @@
             color: var(--tg-theme-hint-color, #666);
         }
         
-        button {
-            width: 100%;
-            padding: 14px;
-            background: var(--tg-theme-button-color, #0088cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.3s;
-        }
-        
-        button:active {
-            opacity: 0.8;
-        }
-        
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
         @media (max-width: 480px) {
             body {
                 padding: 15px;
@@ -224,7 +202,7 @@
         }
         
         // التحقق من تسجيل المستخدم
-        async function checkUserRegistration() {
+        function checkUserRegistration() {
             try {
                 // إرسال طلب التحقق إلى البوت
                 const checkData = {
@@ -237,8 +215,9 @@
                 // إرسال طلب التحقق
                 tg.sendData(JSON.stringify(checkData));
                 
-                // سننتظر رد البوت في معالج منفصل
+                // ننتظر رد البوت
                 // البوت سيرسل رسالة تحتوي على حالة التسجيل
+                // وسيتم استقبالها في معالج WebApp
                 
             } catch (error) {
                 console.error('Error checking registration:', error);
@@ -377,18 +356,6 @@
             }
         }
         
-        function showStatus(message, type) {
-            const statusDiv = document.getElementById('status');
-            statusDiv.textContent = message;
-            statusDiv.className = `status ${type}`;
-            
-            if (type !== 'error') {
-                setTimeout(() => {
-                    statusDiv.style.display = 'none';
-                }, 5000);
-            }
-        }
-        
         // بدء التحقق
         checkUserRegistration();
         
@@ -402,17 +369,11 @@
         });
         observer.observe(document.body);
         
-        // استقبال الرد من البوت عن حالة التسجيل
-        // البوت سيرسل رسالة تحتوي على البيانات، وهنا نستقبلها
-        window.addEventListener('message', function(event) {
-            if (event.data && event.data.type === 'registration_status') {
-                if (event.data.registered) {
-                    showRegisteredInterface(event.data.email);
-                } else {
-                    showUnregisteredInterface();
-                }
-            }
-        });
+        // استقبال الرد من البوت (يتم عبر رسائل WebApp)
+        // البوت سيرسل رسالة تحتوي على الحالة، وهنا نستقبلها
+        // ملاحظة: tg.sendData لا يمكنه استقبال رد مباشر
+        // لذلك نعتمد على أن المستخدم سيرى رسالة من البوت
+        // ويمكننا استخدام localStorage لتخزين الحالة مؤقتاً
     </script>
 </body>
 </html>
