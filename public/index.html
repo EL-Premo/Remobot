@@ -2,180 +2,77 @@
 <html lang="ar">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>WhatsApp Support Bot</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دعم واتساب - سريع</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; direction: rtl; }
-        .container { max-width: 500px; margin: 0 auto; }
-        .card { background: white; border-radius: 20px; padding: 30px; margin-bottom: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 8px; font-weight: 600; color: #333; }
-        input { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 16px; direction: ltr; transition: border-color 0.3s; }
-        input:focus { outline: none; border-color: #667eea; }
-        button { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
-        button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4); }
-        button:disabled { opacity: 0.6; cursor: not-allowed; }
-        .status { margin-top: 20px; padding: 12px; border-radius: 10px; display: none; animation: fadeIn 0.3s; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
-        .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; display: block; }
-        .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; display: block; }
-        .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; display: block; }
-        .status.loading { background: #e2e3e5; color: #383d41; border: 1px solid #d6d8db; display: block; }
-        .header { text-align: center; margin-bottom: 30px; color: white; }
-        .header h1 { font-size: 28px; margin-bottom: 10px; }
-        .header p { font-size: 14px; opacity: 0.9; }
-        .badge { display: inline-block; padding: 4px 12px; background: rgba(255,255,255,0.2); color: white; border-radius: 20px; font-size: 12px; margin-top: 10px; }
-        .note { background: rgba(255,255,255,0.9); padding: 12px; border-radius: 10px; margin-top: 20px; font-size: 12px; color: #666; text-align: center; line-height: 1.6; }
-        .counter { text-align: center; margin-top: 15px; font-size: 14px; font-weight: 500; color: white; background: rgba(255,255,255,0.2); padding: 8px; border-radius: 20px; display: inline-block; width: auto; }
-        .counter-container { text-align: center; margin-top: 15px; }
-        .clear-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.3); padding: 8px 16px; border-radius: 20px; font-size: 12px; cursor: pointer; margin-top: 10px; transition: all 0.3s; width: auto; display: inline-block; }
-        .clear-btn:hover { background: rgba(255,255,255,0.3); transform: translateY(-1px); }
-        @media (max-width: 480px) { body { padding: 15px; } .card { padding: 20px; } .header h1 { font-size: 24px; } }
+        body { font-family: sans-serif; background: linear-gradient(135deg, #1ebea5 0%, #075e54 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; direction: rtl; padding: 20px; }
+        .card { background: white; padding: 30px; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        h2 { text-align: center; color: #075e54; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        input { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; font-size: 16px; outline: none; }
+        input:focus { border-color: #1ebea5; }
+        button { width: 100%; padding: 15px; background: #25d366; color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #128c7e; }
+        button:disabled { background: #ccc; }
+        #status { margin-top: 15px; text-align: center; font-size: 14px; padding: 10px; border-radius: 8px; display: none; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>📱 دعم واتساب</h1>
-            <p>أرسل مشكلتك إلى دعم واتساب</p>
-            <span class="badge">Mini App</span>
+    <div class="card">
+        <h2>📱 إرسال بلاغ دعم</h2>
+        <div class="form-group">
+            <label>رقم الهاتف (مثال: 966500000000)</label>
+            <input type="tel" id="phone" placeholder="966..." dir="ltr">
         </div>
-        
-        <div class="card">
-            <div class="form-group">
-                <label>📞 رقم الهاتف (بدون +)</label>
-                <input type="tel" id="phoneNumber" placeholder="مثال: 966512345678" dir="ltr" autocomplete="off">
-            </div>
-            
-            <div class="form-group">
-                <label>📧 البريد الإلكتروني (Gmail)</label>
-                <input type="email" id="email" placeholder="example@gmail.com" dir="ltr">
-            </div>
-            
-            <div class="form-group">
-                <label>🔑 كلمة مرور التطبيق (App Password)</label>
-                <input type="password" id="password" placeholder="أدخل كلمة مرور التطبيق" dir="ltr">
-            </div>
-            
-            <button id="sendBtn">📤 إرسال البلاغ</button>
+        <div class="form-group">
+            <label>بريدك الإلكتروني للرد</label>
+            <input type="email" id="email" placeholder="example@gmail.com" dir="ltr">
         </div>
-        
-        <div id="status" class="status"></div>
-        
-        <div class="counter-container">
-            <div class="counter" id="counter">📊 لم يتم إرسال أي بلاغ بعد</div>
-            <button class="clear-btn" id="clearBtn" style="display: none;">🔄 إعادة ضبط العداد</button>
-        </div>
-        
-        <div class="note">
-            💡 ملاحظة: يجب تفعيل <b>التحقق بخطوتين</b> في حساب Google الخاص بك أولاً.<br>
-            🔑 استخدم <b>كلمة مرور التطبيق</b> المكونة من 16 حرفاً، وليس كلمة المرور العادية.<br>
-            لإنشائها: https://myaccount.google.com/apppasswords
-        </div>
+        <button id="sendBtn">📤 إرسال البلاغ الآن</button>
+        <div id="status"></div>
     </div>
-    
+
     <script>
-        let sendCount = parseInt(localStorage.getItem('sendCount')) || 0;
-        let isSending = false;
-        
-        const phoneInput = document.getElementById('phoneNumber');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
         const sendBtn = document.getElementById('sendBtn');
-        const clearBtn = document.getElementById('clearBtn');
         const statusDiv = document.getElementById('status');
-        const counterDiv = document.getElementById('counter');
-        
-        updateCounter();
-        
-        function updateCounter() {
-            if (sendCount === 0) {
-                counterDiv.innerHTML = '📊 لم يتم إرسال أي بلاغ بعد';
-                clearBtn.style.display = 'none';
-            } else {
-                counterDiv.innerHTML = `✅ تم إرسال ${sendCount} بلاغ${sendCount > 1 ? 'ات' : ''} بنجاح`;
-                clearBtn.style.display = 'inline-block';
-            }
-            localStorage.setItem('sendCount', sendCount);
-        }
-        
-        clearBtn.onclick = () => {
-            sendCount = 0;
-            updateCounter();
-            showStatus('🔄 تم إعادة ضبط العداد', 'info');
-        };
-        
-        function showStatus(message, type) {
-            statusDiv.textContent = message;
-            statusDiv.className = `status ${type}`;
-            setTimeout(() => {
-                if (statusDiv.style.display !== 'none') {
-                    statusDiv.style.animation = 'fadeOut 0.3s';
-                    setTimeout(() => {
-                        statusDiv.style.display = 'none';
-                        statusDiv.style.animation = '';
-                    }, 300);
-                }
-            }, 7000);
-        }
-        
-        async function sendReport() {
-            if (isSending) return;
-            
-            const phoneNumber = phoneInput.value.trim();
-            const email = emailInput.value.trim();
-            const password = passwordInput.value.trim().replace(/\s+/g, ''); // إزالة المسافات من الباسورد
-            
-            if (!phoneNumber) return showStatus('الرجاء إدخال رقم الهاتف', 'error');
-            if (!email.match(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)) return showStatus('الرجاء إدخال بريد Gmail صحيح', 'error');
-            if (!password) return showStatus('الرجاء إدخال كلمة مرور التطبيق', 'error');
-            if (!phoneNumber.match(/^\d{8,15}$/)) return showStatus('الرقم يجب أن يحتوي على 8-15 رقم فقط', 'error');
-            
-            isSending = true;
+
+        sendBtn.onclick = async () => {
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            if (!phone || !email) return alert('يرجى ملء كافة الحقول');
+
             sendBtn.disabled = true;
-            sendBtn.textContent = '⏳ جاري الإرسال...';
-            showStatus('🔄 جاري الاتصال بالخادم... يرجى الانتظار', 'loading');
-            
+            sendBtn.textContent = '⏳ جاري المعالجة...';
+            statusDiv.style.display = 'none';
+
             try {
-                // نستخدم المسار النسبي، سيعمل تلقائياً على Render
                 const response = await fetch('/api/send', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ phone: phoneNumber, email, password })
+                    body: JSON.stringify({ phone, email })
                 });
-                
+
                 const result = await response.json();
-                
-                if (response.ok && result.success) {
-                    sendCount++;
-                    updateCounter();
-                    passwordInput.value = ''; // مسح الباسورد فقط للأمان
-                    showStatus(`✅ ${result.message}`, 'success');
-                } else {
-                    showStatus(`❌ ${result.message || 'حدث خطأ غير معروف'}`, 'error');
-                }
-                
+                statusDiv.style.display = 'block';
+                statusDiv.textContent = result.message;
+                statusDiv.className = result.success ? 'success' : 'error';
+
+                if (result.success) document.getElementById('phone').value = '';
+
             } catch (error) {
-                console.error('Error:', error);
-                showStatus('❌ حدث خطأ في الاتصال. تأكد من اتصالك بالإنترنت ومن أن الخادم يعمل.', 'error');
+                statusDiv.style.display = 'block';
+                statusDiv.textContent = '❌ فشل الاتصال بالسيرفر';
+                statusDiv.className = 'error';
             } finally {
-                isSending = false;
                 sendBtn.disabled = false;
-                sendBtn.textContent = '📤 إرسال البلاغ';
+                sendBtn.textContent = '📤 إرسال البلاغ الآن';
             }
-        }
-        
-        sendBtn.onclick = sendReport;
-        
-        const savedEmail = localStorage.getItem('lastEmail');
-        if (savedEmail) emailInput.value = savedEmail;
-        emailInput.addEventListener('change', () => {
-            if (emailInput.value.match(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)) {
-                localStorage.setItem('lastEmail', emailInput.value);
-            }
-        });
+        };
     </script>
 </body>
 </html>
