@@ -132,6 +132,34 @@
             text-align: center;
         }
         
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: var(--tg-theme-hint-color, #666);
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: var(--tg-theme-button-color, #0088cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        
+        button:active {
+            opacity: 0.8;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
         @media (max-width: 480px) {
             body {
                 padding: 15px;
@@ -151,10 +179,10 @@
         </div>
         
         <div class="user-info" id="userInfo">
-            <p>👤 جاري تحميل بيانات المستخدم...</p>
+            <div class="loading">🔄 جاري التحقق من بياناتك...</div>
         </div>
         
-        <div class="card">
+        <div class="card" id="reportCard" style="display: none;">
             <div class="form-group">
                 <label>📞 رقم الهاتف (بدون +)</label>
                 <input type="tel" id="phoneNumber" placeholder="مثال: 966512345678" dir="ltr">
@@ -162,21 +190,22 @@
             
             <div class="form-group">
                 <label>📧 البريد الإلكتروني (مسجل مسبقاً)</label>
-                <input type="email" id="email" placeholder="بريدك المسجل في البوت" dir="ltr" disabled value="✓ تم التسجيل مسبقاً">
+                <input type="email" id="email" placeholder="بريدك المسجل" dir="ltr" disabled>
             </div>
         </div>
         
         <div id="status" class="status"></div>
         
-        <div class="note">
-            💡 ملاحظة: بريدك الإلكتروني مسجل مسبقاً في البوت<br>
-            🔑只需要 إدخال رقم الهاتف ثم الضغط على الزر الأزرق في الأسفل
+        <div class="note" id="note">
+            💡只需要 إدخال رقم الهاتف ثم الضغط على الزر الأزرق في الأسفل
         </div>
     </div>
     
     <script>
         let tg = window.Telegram.WebApp;
         let user = null;
+        let isRegistered = false;
+        let userEmail = '';
         
         // تهيئة التطبيق
         tg.ready();
@@ -185,48 +214,102 @@
         // الحصول على بيانات المستخدم
         user = tg.initDataUnsafe?.user;
         
-        if (user) {
+        if (!user) {
+            document.getElementById('userInfo').innerHTML = `
+                <p>⚠️ لا يمكن التعرف على المستخدم</p>
+                <p>الرجاء فتح Mini App من داخل البوت</p>
+            `;
+            tg.MainButton.hide();
+            return;
+        }
+        
+        // التحقق من تسجيل المستخدم
+        async function checkUserRegistration() {
+            try {
+                // إرسال طلب التحقق إلى البوت
+                const checkData = {
+                    action: 'check_registration',
+                    user_id: user.id
+                };
+                
+                console.log('Checking registration:', checkData);
+                
+                // إرسال طلب التحقق
+                tg.sendData(JSON.stringify(checkData));
+                
+                // سننتظر رد البوت في معالج منفصل
+                // البوت سيرسل رسالة تحتوي على حالة التسجيل
+                
+            } catch (error) {
+                console.error('Error checking registration:', error);
+                document.getElementById('userInfo').innerHTML = `
+                    <p>❌ حدث خطأ في التحقق</p>
+                    <p>الرجاء المحاولة مرة أخرى</p>
+                `;
+            }
+        }
+        
+        // عرض واجهة المستخدم المسجل
+        function showRegisteredInterface(email) {
+            isRegistered = true;
+            userEmail = email;
+            
             document.getElementById('userInfo').innerHTML = `
                 <p>👤 ${user.first_name || ''} ${user.last_name || ''}</p>
                 <p>🆔 ${user.id}</p>
                 <p>📝 ${user.username ? '@' + user.username : 'لا يوجد يوزرنيم'}</p>
-                <p>✅ بريدك مسجل في النظام</p>
+                <p>✅ <span style="color: #4caf50;">✓ مسجل في النظام</span></p>
             `;
-        } else {
-            document.getElementById('userInfo').innerHTML = '<p>⚠️ يرجى فتح Mini App من البوت أولاً</p>';
+            
+            document.getElementById('email').value = email;
+            document.getElementById('reportCard').style.display = 'block';
+            
+            // إعداد Main Button
+            tg.MainButton.setText("📤 إرسال البلاغ");
+            tg.MainButton.show();
+            tg.MainButton.disable();
+            
+            // التحقق من صحة رقم الهاتف
+            const phoneInput = document.getElementById('phoneNumber');
+            phoneInput.addEventListener('input', function() {
+                const phone = this.value.trim();
+                if (phone && phone.match(/^\d{8,15}$/)) {
+                    tg.MainButton.enable();
+                } else {
+                    tg.MainButton.disable();
+                }
+            });
+            
+            // معالج الضغط على Main Button
+            tg.MainButton.onClick(function() {
+                sendReport();
+            });
         }
         
-        // إعداد Main Button
-        tg.MainButton.setText("📤 إرسال البلاغ");
-        tg.MainButton.show();
-        
-        // التحقق من صحة رقم الهاتف في الوقت الفعلي
-        const phoneInput = document.getElementById('phoneNumber');
-        
-        phoneInput.addEventListener('input', function() {
-            const phone = this.value.trim();
-            if (phone && phone.match(/^\d{8,15}$/)) {
-                tg.MainButton.enable();
-            } else {
-                tg.MainButton.disable();
-            }
-        });
-        
-        // تعطيل الزر في البداية
-        tg.MainButton.disable();
-        
-        // معالج الضغط على Main Button
-        tg.MainButton.onClick(function() {
-            sendReport();
-        });
+        // عرض واجهة المستخدم غير المسجل
+        function showUnregisteredInterface() {
+            isRegistered = false;
+            
+            document.getElementById('userInfo').innerHTML = `
+                <p>👤 ${user.first_name || ''} ${user.last_name || ''}</p>
+                <p>🆔 ${user.id}</p>
+                <p>📝 ${user.username ? '@' + user.username : 'لا يوجد يوزرنيم'}</p>
+                <p>❌ <span style="color: #f44336;">✗ غير مسجل في النظام</span></p>
+            `;
+            
+            document.getElementById('reportCard').style.display = 'none';
+            document.getElementById('note').innerHTML = `
+                ⚠️ يجب عليك التسجيل أولاً في البوت<br>
+                استخدم /start في البوت للتسجيل
+            `;
+            
+            tg.MainButton.hide();
+        }
         
         async function sendReport() {
             const phoneNumber = document.getElementById('phoneNumber').value.trim();
-            const statusDiv = document.getElementById('status');
             
-            // التحقق من المدخلات
             if (!phoneNumber) {
-                showStatus('الرجاء إدخال رقم الهاتف', 'error');
                 tg.showPopup({
                     title: 'خطأ',
                     message: 'الرجاء إدخال رقم الهاتف',
@@ -235,9 +318,7 @@
                 return;
             }
             
-            // التحقق من صيغة الرقم
             if (!phoneNumber.match(/^\d{8,15}$/)) {
-                showStatus('الرقم يجب أن يحتوي على 8-15 رقم فقط', 'error');
                 tg.showPopup({
                     title: 'خطأ',
                     message: 'الرقم يجب أن يحتوي على 8-15 رقم فقط',
@@ -250,26 +331,22 @@
             tg.MainButton.showProgress(true);
             tg.MainButton.setText("جاري الإرسال...");
             
-            showStatus('جاري إرسال البلاغ...', 'info');
-            
             try {
                 // إعداد البيانات للإرسال
                 const reportData = {
-                    phone: phoneNumber,
-                    user_id: user?.id || 'unknown',
-                    username: user?.username || '',
-                    first_name: user?.first_name || ''
+                    action: 'send_report',
+                    data: {
+                        phone: phoneNumber,
+                        user_id: user.id,
+                        username: user.username || '',
+                        first_name: user.first_name || ''
+                    }
                 };
                 
                 console.log('Sending report:', reportData);
                 
                 // إرسال البيانات عبر WebApp
-                tg.sendData(JSON.stringify({
-                    action: 'send_report',
-                    data: reportData
-                }));
-                
-                showStatus('✅ تم إرسال البلاغ بنجاح! جاري المعالجة...', 'success');
+                tg.sendData(JSON.stringify(reportData));
                 
                 // مسح حقل رقم الهاتف
                 document.getElementById('phoneNumber').value = '';
@@ -282,14 +359,13 @@
                     buttons: [{type: 'ok'}]
                 });
                 
-                // إغلاق التطبيق بعد 3 ثواني
+                // إغلاق التطبيق بعد 2 ثانية
                 setTimeout(() => {
                     tg.close();
-                }, 3000);
+                }, 2000);
                 
             } catch (error) {
                 console.error('Error:', error);
-                showStatus('❌ حدث خطأ: ' + error.message, 'error');
                 tg.showPopup({
                     title: 'خطأ',
                     message: 'حدث خطأ: ' + error.message,
@@ -313,15 +389,30 @@
             }
         }
         
+        // بدء التحقق
+        checkUserRegistration();
+        
         // تحسين التطبيق للهواتف
         tg.setBackgroundColor('var(--tg-theme-bg-color)');
         tg.setHeaderColor('var(--tg-theme-header-bg-color)');
         
-        // تحديث ارتفاع التطبيق عند تغيير المحتوى
+        // تحديث ارتفاع التطبيق
         const observer = new ResizeObserver(() => {
             tg.expand();
         });
         observer.observe(document.body);
+        
+        // استقبال الرد من البوت عن حالة التسجيل
+        // البوت سيرسل رسالة تحتوي على البيانات، وهنا نستقبلها
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'registration_status') {
+                if (event.data.registered) {
+                    showRegisteredInterface(event.data.email);
+                } else {
+                    showUnregisteredInterface();
+                }
+            }
+        });
     </script>
 </body>
 </html>
