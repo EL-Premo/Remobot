@@ -71,19 +71,18 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
         
-        button:hover {
+        button:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
         }
         
-        button:active {
+        button:active:not(:disabled) {
             transform: translateY(0);
         }
         
         button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
-            transform: none;
         }
         
         .status {
@@ -122,6 +121,13 @@
             background: #d1ecf1;
             color: #0c5460;
             border: 1px solid #bee5eb;
+            display: block;
+        }
+        
+        .status.loading {
+            background: #e2e3e5;
+            color: #383d41;
+            border: 1px solid #d6d8db;
             display: block;
         }
         
@@ -237,14 +243,14 @@
                 <input type="password" id="password" placeholder="أدخل كلمة مرور التطبيق" dir="ltr">
             </div>
             
-            <button id="sendBtn" onclick="sendReport()">📤 إرسال البلاغ</button>
+            <button id="sendBtn">📤 إرسال البلاغ</button>
         </div>
         
         <div id="status" class="status"></div>
         
         <div class="counter-container">
             <div class="counter" id="counter">📊 لم يتم إرسال أي بلاغ بعد</div>
-            <button class="clear-btn" id="clearBtn" style="display: none;" onclick="resetCounter()">🔄 إعادة ضبط العداد</button>
+            <button class="clear-btn" id="clearBtn" style="display: none;">🔄 إعادة ضبط العداد</button>
         </div>
         
         <div class="note">
@@ -258,22 +264,24 @@
         let sendCount = 0;
         let isSending = false;
         
-        // تحميل العداد من localStorage
+        // العناصر
+        const phoneInput = document.getElementById('phoneNumber');
+        const emailInput = document.getElementById('email');
+        const passwordInput = document.getElementById('password');
+        const sendBtn = document.getElementById('sendBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusDiv = document.getElementById('status');
+        const counterDiv = document.getElementById('counter');
+        
+        // تحميل العداد
         const savedCount = localStorage.getItem('sendCount');
         if (savedCount) {
             sendCount = parseInt(savedCount);
             updateCounter();
         }
         
-        const phoneInput = document.getElementById('phoneNumber');
-        const emailInput = document.getElementById('email');
-        const passwordInput = document.getElementById('password');
-        const sendBtn = document.getElementById('sendBtn');
-        const clearBtn = document.getElementById('clearBtn');
-        
         // تحديث العداد
         function updateCounter() {
-            const counterDiv = document.getElementById('counter');
             if (sendCount === 0) {
                 counterDiv.innerHTML = '📊 لم يتم إرسال أي بلاغ بعد';
                 clearBtn.style.display = 'none';
@@ -285,21 +293,19 @@
         }
         
         // إعادة ضبط العداد
-        window.resetCounter = function() {
+        clearBtn.onclick = () => {
             sendCount = 0;
             updateCounter();
             showStatus('🔄 تم إعادة ضبط العداد', 'info');
         };
         
+        // إظهار الرسالة
         function showStatus(message, type) {
-            const statusDiv = document.getElementById('status');
             statusDiv.textContent = message;
             statusDiv.className = `status ${type}`;
-            statusDiv.style.display = 'block';
             
-            // إخفاء الرسالة بعد 5 ثواني
             setTimeout(() => {
-                if (statusDiv.style.display === 'block') {
+                if (statusDiv.style.display !== 'none') {
                     statusDiv.style.animation = 'fadeOut 0.3s';
                     setTimeout(() => {
                         statusDiv.style.display = 'none';
@@ -309,6 +315,7 @@
             }, 5000);
         }
         
+        // إرسال البلاغ
         async function sendReport() {
             if (isSending) return;
             
@@ -316,7 +323,7 @@
             const email = emailInput.value.trim();
             const password = passwordInput.value.trim();
             
-            // التحقق من المدخلات
+            // التحقق
             if (!phoneNumber) {
                 showStatus('الرجاء إدخال رقم الهاتف', 'error');
                 phoneInput.focus();
@@ -335,14 +342,12 @@
                 return;
             }
             
-            // التحقق من صيغة البريد
             if (!email.match(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)) {
                 showStatus('الرجاء إدخال بريد Gmail صحيح', 'error');
                 emailInput.focus();
                 return;
             }
             
-            // التحقق من صيغة الرقم
             if (!phoneNumber.match(/^\d{8,15}$/)) {
                 showStatus('الرقم يجب أن يحتوي على 8-15 رقم فقط', 'error');
                 phoneInput.focus();
@@ -351,17 +356,13 @@
             
             isSending = true;
             sendBtn.disabled = true;
-            sendBtn.textContent = '📤 جاري الإرسال...';
-            
-            showStatus('🔄 جاري إرسال البلاغ...', 'info');
+            sendBtn.textContent = '⏳ جاري الإرسال...';
+            showStatus('🔄 جاري إرسال البلاغ... يرجى الانتظار', 'loading');
             
             try {
-                // إرسال البيانات إلى الخادم
                 const response = await fetch('/api/send', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         phone: phoneNumber,
                         email: email,
@@ -381,16 +382,14 @@
                     passwordInput.value = '';
                     
                     showStatus(`✅ ${result.message}`, 'success');
-                    
-                    // التركيز على حقل رقم الهاتف
-                    setTimeout(() => phoneInput.focus(), 100);
+                    phoneInput.focus();
                 } else {
                     showStatus(`❌ ${result.message}`, 'error');
                 }
                 
             } catch (error) {
                 console.error('Error:', error);
-                showStatus('❌ حدث خطأ في الاتصال بالخادم', 'error');
+                showStatus('❌ حدث خطأ في الاتصال بالخادم. تأكد من اتصالك بالإنترنت', 'error');
             } finally {
                 isSending = false;
                 sendBtn.disabled = false;
@@ -398,28 +397,30 @@
             }
         }
         
-        // دعم إرسال بالضغط على Enter
-        phoneInput.addEventListener('keypress', function(e) {
+        // ربط الأحداث
+        sendBtn.onclick = sendReport;
+        
+        phoneInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendReport();
         });
-        emailInput.addEventListener('keypress', function(e) {
+        emailInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendReport();
         });
-        passwordInput.addEventListener('keypress', function(e) {
+        passwordInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') sendReport();
         });
         
-        // حفظ آخر بريد في localStorage
+        // حفظ آخر بريد
         const savedEmail = localStorage.getItem('lastEmail');
         if (savedEmail) emailInput.value = savedEmail;
         
-        emailInput.addEventListener('change', function() {
-            if (this.value.match(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)) {
-                localStorage.setItem('lastEmail', this.value);
+        emailInput.addEventListener('change', () => {
+            if (emailInput.value.match(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)) {
+                localStorage.setItem('lastEmail', emailInput.value);
             }
         });
         
-        console.log('Mini App ready');
+        console.log('✅ Mini App ready');
     </script>
 </body>
 </html>
