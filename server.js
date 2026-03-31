@@ -12,7 +12,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ملاحظة: استبدل الرابط أدناه برابط الـ Webhook الذي حصلت عليه من Make.com
-const MAKE_WEBHOOK_URL = 'https://hook.us1.make.com/your_unique_code_here';
+const MAKE_WEBHOOK_URL = 'sudlwc9asb0nuzu4ewwyyjftgneeacbv@hook.eu1.make.com';
 
 app.post('/api/send', async (req, res) => {
     const { phone, email } = req.body;
