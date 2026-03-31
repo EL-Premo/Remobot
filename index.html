@@ -64,28 +64,6 @@
             opacity: 0.7;
         }
         
-        button {
-            width: 100%;
-            padding: 14px;
-            background: var(--tg-theme-button-color, #0088cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.3s;
-        }
-        
-        button:active {
-            opacity: 0.8;
-        }
-        
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
         .status {
             margin-top: 20px;
             padding: 12px;
@@ -186,15 +164,13 @@
                 <label>📧 البريد الإلكتروني (مسجل مسبقاً)</label>
                 <input type="email" id="email" placeholder="بريدك المسجل في البوت" dir="ltr" disabled value="✓ تم التسجيل مسبقاً">
             </div>
-            
-            <button id="sendBtn" onclick="sendReport()">📤 إرسال البلاغ</button>
         </div>
         
         <div id="status" class="status"></div>
         
         <div class="note">
             💡 ملاحظة: بريدك الإلكتروني مسجل مسبقاً في البوت<br>
-            🔑只需要 إدخال رقم الهاتف وإرسال البلاغ
+            🔑只需要 إدخال رقم الهاتف ثم الضغط على الزر الأزرق في الأسفل
         </div>
     </div>
     
@@ -218,8 +194,31 @@
             `;
         } else {
             document.getElementById('userInfo').innerHTML = '<p>⚠️ يرجى فتح Mini App من البوت أولاً</p>';
-            document.getElementById('sendBtn').disabled = true;
         }
+        
+        // إعداد Main Button
+        tg.MainButton.setText("📤 إرسال البلاغ");
+        tg.MainButton.show();
+        
+        // التحقق من صحة رقم الهاتف في الوقت الفعلي
+        const phoneInput = document.getElementById('phoneNumber');
+        
+        phoneInput.addEventListener('input', function() {
+            const phone = this.value.trim();
+            if (phone && phone.match(/^\d{8,15}$/)) {
+                tg.MainButton.enable();
+            } else {
+                tg.MainButton.disable();
+            }
+        });
+        
+        // تعطيل الزر في البداية
+        tg.MainButton.disable();
+        
+        // معالج الضغط على Main Button
+        tg.MainButton.onClick(function() {
+            sendReport();
+        });
         
         async function sendReport() {
             const phoneNumber = document.getElementById('phoneNumber').value.trim();
@@ -228,43 +227,60 @@
             // التحقق من المدخلات
             if (!phoneNumber) {
                 showStatus('الرجاء إدخال رقم الهاتف', 'error');
+                tg.showPopup({
+                    title: 'خطأ',
+                    message: 'الرجاء إدخال رقم الهاتف',
+                    buttons: [{type: 'ok'}]
+                });
                 return;
             }
             
             // التحقق من صيغة الرقم
             if (!phoneNumber.match(/^\d{8,15}$/)) {
                 showStatus('الرقم يجب أن يحتوي على 8-15 رقم فقط', 'error');
+                tg.showPopup({
+                    title: 'خطأ',
+                    message: 'الرقم يجب أن يحتوي على 8-15 رقم فقط',
+                    buttons: [{type: 'ok'}]
+                });
                 return;
             }
             
-            // تعطيل الزر
-            const btn = document.getElementById('sendBtn');
-            btn.disabled = true;
-            btn.textContent = 'جاري الإرسال...';
+            // إظهار مؤشر التحميل
+            tg.MainButton.showProgress(true);
+            tg.MainButton.setText("جاري الإرسال...");
             
             showStatus('جاري إرسال البلاغ...', 'info');
             
             try {
-                // إرسال البلاغ إلى البوت
+                // إعداد البيانات للإرسال
                 const reportData = {
-                    action: 'send_report',
-                    data: {
-                        phone: phoneNumber
-                    }
+                    phone: phoneNumber,
+                    user_id: user?.id || 'unknown',
+                    username: user?.username || '',
+                    first_name: user?.first_name || ''
                 };
                 
-                console.log('Sending data:', reportData);
+                console.log('Sending report:', reportData);
                 
-                // إرسال البيانات إلى البوت عبر WebApp
-                tg.sendData(JSON.stringify(reportData));
+                // إرسال البيانات عبر WebApp
+                tg.sendData(JSON.stringify({
+                    action: 'send_report',
+                    data: reportData
+                }));
                 
                 showStatus('✅ تم إرسال البلاغ بنجاح! جاري المعالجة...', 'success');
                 
                 // مسح حقل رقم الهاتف
                 document.getElementById('phoneNumber').value = '';
+                tg.MainButton.disable();
                 
                 // إظهار رسالة نجاح
-                tg.showAlert('تم إرسال البلاغ بنجاح! سيتم معالجته خلال دقائق');
+                tg.showPopup({
+                    title: 'تم الإرسال',
+                    message: 'تم إرسال البلاغ بنجاح! سيتم معالجته خلال دقائق',
+                    buttons: [{type: 'ok'}]
+                });
                 
                 // إغلاق التطبيق بعد 3 ثواني
                 setTimeout(() => {
@@ -274,10 +290,14 @@
             } catch (error) {
                 console.error('Error:', error);
                 showStatus('❌ حدث خطأ: ' + error.message, 'error');
-                tg.showAlert('حدث خطأ: ' + error.message);
+                tg.showPopup({
+                    title: 'خطأ',
+                    message: 'حدث خطأ: ' + error.message,
+                    buttons: [{type: 'ok'}]
+                });
             } finally {
-                btn.disabled = false;
-                btn.textContent = '📤 إرسال البلاغ';
+                tg.MainButton.hideProgress(true);
+                tg.MainButton.setText("📤 إرسال البلاغ");
             }
         }
         
@@ -297,10 +317,11 @@
         tg.setBackgroundColor('var(--tg-theme-bg-color)');
         tg.setHeaderColor('var(--tg-theme-header-bg-color)');
         
-        // إضافة مستمع لحدث الإغلاق
-        tg.onEvent('mainButtonClicked', function() {
-            sendReport();
+        // تحديث ارتفاع التطبيق عند تغيير المحتوى
+        const observer = new ResizeObserver(() => {
+            tg.expand();
         });
+        observer.observe(document.body);
     </script>
 </body>
 </html>
