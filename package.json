@@ -1,14 +1,13 @@
 {
   "name": "whatsapp-support-bot",
   "version": "1.0.0",
-  "description": "WhatsApp Support Bot",
+  "description": "تطبيق مصغر لإرسال رسائل دعم واتساب عبر Gmail",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "nodemailer": "^6.9.7",
-    "cors": "^2.8.5"
+    "express": "^4.19.2",
+    "nodemailer": "^6.9.13"
   }
 }
